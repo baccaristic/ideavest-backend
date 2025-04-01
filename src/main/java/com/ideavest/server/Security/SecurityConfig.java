@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/ideas/all").hasAuthority("ADMIN")
                         .requestMatchers("/ideas/estimate").hasAuthority("EXPERT")
                         .requestMatchers("/ideas/my-ideas").hasAuthority("IDEA_HOLDER")
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

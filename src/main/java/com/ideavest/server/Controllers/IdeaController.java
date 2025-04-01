@@ -2,7 +2,9 @@ package com.ideavest.server.Controllers;
 
 import com.ideavest.server.Repositories.IdeaRepository;
 import com.ideavest.server.Repositories.UserRepository;
+import com.ideavest.server.Services.IdeaService;
 import com.ideavest.server.dtos.IdeaDTO;
+import com.ideavest.server.dtos.IdeaEstimatedDto;
 import com.ideavest.server.models.Idea;
 import com.ideavest.server.models.IdeaStatus;
 import com.ideavest.server.models.User;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/ideas")
@@ -22,6 +25,8 @@ public class IdeaController {
 
     @Autowired
     private IdeaRepository ideaRepository;
+
+    @Autowired private IdeaService ideaService;
 
     @Autowired
     private UserRepository userRepository;
@@ -44,6 +49,25 @@ public class IdeaController {
             return ResponseEntity.status(403).build();
         }
         return ResponseEntity.ok(ideaRepository.findByStatus(IdeaStatus.APPROVED)); // Only approved ideas need estimation
+    }
+    @GetMapping("/estimated")
+    public ResponseEntity<List<Idea>> getEstimatedIdeasInvestor(Authentication authentication) {
+        Optional<User> user = userRepository.findByEmail(authentication.getName());
+        if (user.isEmpty() || user.get().getRole() == UserRole.IDEA_HOLDER) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(ideaRepository.findByStatus(IdeaStatus.ESTIMATED)); // Only approved ideas need estimation
+    }
+
+    @GetMapping("/{ideaId}")
+    public ResponseEntity<Idea> getIdeaById(@PathVariable UUID ideaId) {
+        return ResponseEntity.ok(ideaService.getIdeaById(ideaId));
+    }
+
+    @PostMapping("/{ideaId}/like")
+    public ResponseEntity<Void> likeIdea(@PathVariable UUID ideaId) {
+        ideaService.likeIdea(ideaId);
+        return ResponseEntity.ok().build();
     }
 
     // 🔹 Idea Holder - Retrieve their own ideas
@@ -70,5 +94,14 @@ public class IdeaController {
         newIdea.setStatus(IdeaStatus.AWAITING_APPROVAL);
         newIdea.setEstimatedBudget(idea.getEstimatedBudget());
         return ResponseEntity.ok(ideaRepository.save(newIdea));
+    }
+    @GetMapping("/investor/estimated")
+    public ResponseEntity<List<IdeaEstimatedDto>> getEstimatedIdeas(Authentication authentication) {
+        Optional<User> user = userRepository.findByEmail(authentication.getName());
+        if (user.isEmpty() || user.get().getRole() != UserRole.INVESTOR) {
+            return ResponseEntity.status(403).build();
+        }
+        List<IdeaEstimatedDto> ideas = ideaService.getEstimatedIdeas(user.get());
+        return ResponseEntity.ok(ideas);
     }
 }
