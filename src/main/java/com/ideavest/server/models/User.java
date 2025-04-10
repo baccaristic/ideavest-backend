@@ -1,5 +1,6 @@
 package com.ideavest.server.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,9 +30,10 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Idea> ownedIdeas;
-
+    @JsonIgnore
     @OneToMany(mappedBy = "submittedBy", cascade = CascadeType.ALL)
     private List<Idea> submittedIdeas;
 

@@ -1,6 +1,8 @@
 package com.ideavest.server.Controllers;
 
+import com.ideavest.server.Repositories.IdeaRepository;
 import com.ideavest.server.Services.NotificationService;
+import com.ideavest.server.dtos.IdeaUpdateAssignedToDTO;
 import com.ideavest.server.models.*;
 import com.ideavest.server.Services.IdeaService;
 import com.ideavest.server.Services.UserService;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +24,7 @@ public class AdminController {
 
     private final UserService userService;
     private final IdeaService ideaService;
+    private final IdeaRepository ideaRepository;
     private final NotificationService notificationService;
 
     // ✅ Get all users
@@ -34,6 +38,11 @@ public class AdminController {
     public ResponseEntity<User> updateUserRole(@PathVariable UUID userId, @RequestBody Map<String, String> body) {
         String  role = body.get("role");
         return ResponseEntity.ok(userService.updateUserRole(userId,UserRole.valueOf(role)));
+    }
+
+    @GetMapping("/experts")
+    public ResponseEntity<List<User>> getExperts() {
+        return ResponseEntity.ok(userService.getAllUsersByRole(UserRole.EXPERT));
     }
 
     // ✅ Get all ideas
@@ -69,5 +78,20 @@ public class AdminController {
     public ResponseEntity<User> addExpert(@RequestBody User expertData) {
         return ResponseEntity.ok(userService.addExpert(expertData));
     }
+
+
+    @PostMapping("/assign")
+    public ResponseEntity<Idea> assignIdea(@RequestBody IdeaUpdateAssignedToDTO dto) {
+        Optional<Idea> ideaOpt = ideaRepository.findById(dto.getIdeaId());
+        Optional<User> userOpt = userService.findById(dto.getUserId());
+
+        if (ideaOpt.isEmpty() || userOpt.isEmpty()) return ResponseEntity.badRequest().build();
+
+        Idea idea = ideaOpt.get();
+        idea.setAssignedTo(userOpt.get());
+
+        return ResponseEntity.ok(ideaRepository.save(idea));
+    }
+
 }
 

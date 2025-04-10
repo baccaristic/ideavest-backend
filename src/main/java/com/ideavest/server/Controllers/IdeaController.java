@@ -5,10 +5,8 @@ import com.ideavest.server.Repositories.UserRepository;
 import com.ideavest.server.Services.IdeaService;
 import com.ideavest.server.dtos.IdeaDTO;
 import com.ideavest.server.dtos.IdeaEstimatedDto;
-import com.ideavest.server.models.Idea;
-import com.ideavest.server.models.IdeaStatus;
-import com.ideavest.server.models.User;
-import com.ideavest.server.models.UserRole;
+import com.ideavest.server.mappers.IdeaAdditionalDataMapper;
+import com.ideavest.server.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -48,7 +46,7 @@ public class IdeaController {
         if (user.isEmpty() || user.get().getRole() != UserRole.EXPERT) {
             return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.ok(ideaRepository.findByStatus(IdeaStatus.APPROVED)); // Only approved ideas need estimation
+        return ResponseEntity.ok(ideaRepository.findByStatusAndAssignedToId(IdeaStatus.APPROVED, user.get().getId())); // Only approved ideas need estimation
     }
     @GetMapping("/estimated")
     public ResponseEntity<List<Idea>> getEstimatedIdeasInvestor(Authentication authentication) {
@@ -81,18 +79,31 @@ public class IdeaController {
     }
 
     @PostMapping("/new")
-    public ResponseEntity<Idea> createIdea(Authentication authentication, @RequestBody IdeaDTO idea) {
+    public ResponseEntity<Idea> createIdea(Authentication authentication, @RequestBody IdeaDTO ideaDTO) {
         Optional<User> user = userRepository.findByEmail(authentication.getName());
+
         if (user.isEmpty() || user.get().getRole() != UserRole.IDEA_HOLDER) {
             return ResponseEntity.status(403).build();
         }
+
         Idea newIdea = new Idea();
         newIdea.setOwner(user.get());
-        newIdea.setTitle(idea.getTitle());
-        newIdea.setDescription(idea.getDescription());
-        newIdea.setCategory(idea.getCategory());
+        newIdea.setTitle(ideaDTO.getTitle());
+        newIdea.setDescription(ideaDTO.getDescription());
+        newIdea.setCategory(ideaDTO.getCategory());
         newIdea.setStatus(IdeaStatus.AWAITING_APPROVAL);
-        newIdea.setEstimatedBudget(idea.getEstimatedBudget());
+        newIdea.setEstimatedBudget(ideaDTO.getEstimatedBudget());
+        newIdea.setEstimatedPrice(ideaDTO.getEstimatedPrice());
+
+        // Map AdditionalData
+        if (ideaDTO.getAdditionalData() != null) {
+            IdeaAdditionalData additionalData = IdeaAdditionalDataMapper.fromDto(ideaDTO.getAdditionalData());
+            additionalData.setIdea(newIdea);
+            newIdea.setAdditionalData(additionalData);
+        }
+
+        // Map Attachments (if any)
+
         return ResponseEntity.ok(ideaRepository.save(newIdea));
     }
     @GetMapping("/investor/estimated")

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,6 +27,9 @@ public class UserService {
         expertData.setRole(UserRole.EXPERT);
         expertData.setPassword(passwordEncoder.encode(expertData.getPassword()));
         return userRepository.save(expertData);
+    }
+    public List<User> getAllUsersByRole(UserRole role) {
+        return userRepository.findByRole(role);
     }
 
     // ✅ Update user role
@@ -50,6 +54,10 @@ public class UserService {
                 "expertCount", experts,
                 "adminCount", admins
         );
+    }
+
+    public Optional<User> findById(UUID userId) {
+        return this.userRepository.findById(userId);
     }
 }
 

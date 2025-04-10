@@ -13,6 +13,7 @@ import java.util.UUID;
 @Repository
 public interface IdeaRepository extends JpaRepository<Idea, UUID> {
     List<Idea> findByStatus(IdeaStatus status); // Get ideas by status
+    List<Idea> findByStatusAndAssignedToId(IdeaStatus status, UUID id);
     List<Idea> findByOwnerId(UUID id);
     Optional<Idea> findById(UUID ideaId);// Get ideas by user
 }
