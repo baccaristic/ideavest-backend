@@ -8,10 +8,11 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
+@Table(name = "ESTIMATION")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Estimation {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "uuid")
     private UUID id;
 
     private Double price;
